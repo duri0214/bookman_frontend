@@ -1,24 +1,59 @@
 <template>
-  <section class="container">
-    <article class="book" v-for="book of bookList" :key="book.id">
-      <figure>
-        <img :src="book.thumbnail" :alt="book.name" class="thumbnail">
-      </figure>
-      <p class="book-category" :style="{ 'color': book.category.color }">
-        {{ book.category.name }}
-      </p>
-      <h2 class="book-title">{{ book.name }}（著者: {{ book.author.name }} ／ 出版年月日: {{ book.publication_date }}）</h2>
-      <p class="book-lead">{{ book.lead_text }}</p>
-    </article>
-  </section>
+  <main class="container">
+    <p id="lead">{{ bookCount }}件中 {{ bookRangeFirst }}~{{ bookRangeLast }}件を一覧表示</p>
+    <section>
+      <router-link :to="{name: 'detail', params: {id: book.id}}" v-for="book of bookList" :key="book.id" class="book">
+        <article class="book" v-for="book of bookList" :key="book.id">
+          <figure>
+            <img :src="book.thumbnail" :alt="book.name" class="thumbnail">
+          </figure>
+          <p class="book-category" :style="{ 'color': book.category.color }">
+            {{ book.category.name }}
+          </p>
+          <h2 class="book-title">{{ book.name }}（著者: {{ book.author.name }} ／ 出版年月日: {{ book.publication_date }}）</h2>
+          <p class="book-lead">{{ book.lead_text }}</p>
+        </article>
+      </router-link>
+    </section>
+    <hr class="divider">
+    <nav id="page">
+      <a v-if="hasPrevious" @click="getBookPrevious" id="back"><img src="../assets/pagination/back.png" alt="back"></a>
+      <span>Page {{ bookCurrentPageNumber }}</span>
+      <a v-if="hasNext" @click="getBookNext" id="next"><img src="../assets/pagination/next.png" alt="next"></a>
+    </nav>
+  </main>
 </template>
 
 <script>
+import { mapGetters, mapActions } from 'vuex'
+import { UPDATE_BOOKS } from '../store/mutation-types'
 export default {
   name: 'BookList',
-  data () {
-    return {
-      bookList: []
+  computed: {
+    ...mapGetters([
+      'bookList', 'bookCount', 'bookRangeFirst', 'bookRangeLast',
+      'bookCurrentPageNumber', 'hasPrevious', 'hasNext', 'getPreviousURL', 'getNextURL'
+    ])
+  },
+  methods: {
+    ...mapActions([UPDATE_BOOKS]),
+    getBookPrevious () {
+      this.$http(this.getPreviousURL)
+        .then(response => {
+          return response.json()
+        })
+        .then(data => {
+          this[UPDATE_BOOKS](data)
+        })
+    },
+    getBookNext () {
+      this.$http(this.getNextURL)
+        .then(response => {
+          return response.json()
+        })
+        .then(data => {
+          this[UPDATE_BOOKS](data)
+        })
     }
   },
   created () {
@@ -27,8 +62,8 @@ export default {
         return response.json()
       })
       .then(data => {
-        this.bookList = data
-        console.log(this.bookList)
+        this[UPDATE_BOOKS](data)
+        console.log(data)
       })
   }
 }
